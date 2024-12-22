@@ -27,11 +27,8 @@ namespace Elgin.Driver
         {
             int result = ImprimeXMLSAT($"path={path}", 0);
 
-            if(result == 0)
-            {
-                Corte(5);
-            }
-            
+            Corte(5);
+
             return result;
         }
     }

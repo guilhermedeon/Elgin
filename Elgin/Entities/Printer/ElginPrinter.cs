@@ -58,7 +58,7 @@ namespace Elgin.Entities.Printer
         {
             using (var connection = new ElginPrinterConnection(this))
             {
-                duracaoTotalMs = (quantidade * duracaoDoToque) + ((quantidade - 1) * tempoEntreToques) * 1000;
+                duracaoTotalMs = (quantidade * duracaoDoToque * 100) + ((quantidade - 1) * tempoEntreToques * 100);
                 return ElginDriver.SinalSonoro(quantidade, duracaoDoToque, tempoEntreToques);
             }
         }
@@ -83,7 +83,7 @@ namespace Elgin.Entities.Printer
         {
             using (var connection = new ElginPrinterConnection(this))
             {
-                return ElginDriver.ImprimeXMLSAT(path,0);
+                return ElginDriver.ImprimeXMLSAT(path, 0);
             }
         }
 
@@ -92,6 +92,26 @@ namespace Elgin.Entities.Printer
             using (var connection = new ElginPrinterConnection(this))
             {
                 return ElginDriver.ImprimeXMLSATWithCutsFromPath(path);
+            }
+        }
+
+        public void ImprimeTexto(List<string> linhas)
+        {
+            using (var connection = new ElginPrinterConnection(this))
+            {
+                foreach (var linha in linhas)
+                {
+                    ElginDriver.ImpressaoTexto(linha, 1, 0, 0);
+                    ElginDriver.AvancaPapel(1);
+                }
+            }
+        }
+
+        public void Generic(Delegate @delegate)
+        {
+            using (var connection = new ElginPrinterConnection(this))
+            {
+                @delegate.DynamicInvoke();
             }
         }
     }
