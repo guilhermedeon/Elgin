@@ -6,25 +6,36 @@ using SixLabors.ImageSharp.PixelFormats;
 using SixLabors.ImageSharp.Processing;
 using NReco.PdfRenderer;
 using System.Reflection.PortableExecutable;
+using System.Drawing.Printing;
+using Elgin.Service;
 
 public static class Program
 {
     static void Main(string[] args)
     {
         ElginPrinter printer = ElginPrinterFactory.CreateUsbPrinter(ElginModel.i9);
-        //MainFlow(args, printer);
-        TestFlow(args, printer);
+        ElginPrinterService service = new ElginPrinterService();
+        ElginPrinterConnectionManager manager = new ElginPrinterConnectionManager();
+        MainFlow(args, printer, service, manager);
+        TestFlow(args, printer, service, manager);
     }
 
-    private static void MainFlow(string[] args, ElginPrinter printer)
+    private static void MainFlow(string[] args, ElginPrinter printer, ElginPrinterService service, ElginPrinterConnectionManager manager)
     {
+        printer.Validate();
+
+        using var connection = manager.CreateConnection(printer);
+
+        if (connection == null)
+            throw new ArgumentException("Connection is null");
+
         foreach (var argRaw in args)
         {
             string arg = argRaw.Replace("\\", "/");
             Console.WriteLine($"Imprimindo arquivo: {arg}");
             if (arg.EndsWith(".jpg") || arg.EndsWith(".png"))
             {
-                printer.ImprimeImagemWithCuts(argRaw);
+                service.ImprimeImagemWithCuts(argRaw, connection);
                 continue;
             }
 
@@ -33,7 +44,7 @@ public static class Program
                 int count = ConvertPdfToPng(arg);
                 for (int i = 1; i <= count; i++)
                 {
-                    printer.ImprimeImagemWithCuts(arg.Replace(".pdf", $"{i.ToString()}.png"));
+                    service.ImprimeImagemWithCuts(arg.Replace(".pdf", $"{i.ToString()}.png"), connection);
                     File.Delete(arg.Replace(".pdf", $"{i.ToString()}.png"));
                 }
                 continue;
@@ -41,7 +52,7 @@ public static class Program
 
             if (arg.EndsWith(".xml"))
             {
-                printer.ImprimeXMLSATWithCuts(arg);
+                service.ImprimeXMLSATWithCuts(arg, connection);
                 continue;
             }
 
@@ -55,9 +66,9 @@ public static class Program
                 linhas.Add(string.Empty);
                 linhas.Add("----------------------------------------------");
 
-                printer.ImprimeTexto(linhas);
+                service.ImprimeTexto(linhas, connection);
 
-                printer.Corte(5);
+                service.Corte(5, connection);
 
                 continue;
             }
@@ -66,18 +77,19 @@ public static class Program
         }
     }
 
-    private static void TestFlow(string[] args, ElginPrinter printer)
+    private static void TestFlow(string[] args, ElginPrinter printer, ElginPrinterService service, ElginPrinterConnectionManager manager)
     {
-        using (var connection = new ElginPrinterConnection(printer))
+        using var connection = manager.CreateConnection(printer);
+
+        if (connection == null)
+            throw new ArgumentException("Connection is null");
+
+
+        for (int i = 0; i < 200; i++)
         {
-
-            ElginDriver.ImpressaoTexto("asdasd", 1, 0, 1);
-            ElginDriver.AvancaPapel(5);
-            ElginDriver.Corte(5);
-
-            ElginDriver.ImpressaoQRCode
-            Task.Delay(10000).Wait();
+            service.Corte(1, connection);
         }
+
     }
 
     public static int ConvertPdfToPng(string pdfFilePath)

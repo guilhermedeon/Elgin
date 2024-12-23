@@ -9,14 +9,32 @@ namespace Elgin.Entities.Printer
 {
     public class ElginPrinterConnection : IDisposable
     {
+        private bool disposedValue;
+
+        public bool IsOpen { get; private set; } = false;
+
         public ElginPrinterConnection(ElginPrinter printer)
         {
             printer.Validate();
             ElginDriver.AbreConexaoImpressora(printer);
+            IsOpen = true;
         }
+
+        protected virtual void Dispose(bool disposing)
+        {
+            if (!disposedValue)
+            {
+                ElginDriver.FechaConexaoImpressora();
+                IsOpen = false;
+
+                disposedValue = true;
+            }
+        }
+
         public void Dispose()
         {
-            ElginDriver.FechaConexaoImpressora();
+            Dispose(disposing: true);
+            GC.SuppressFinalize(this);
         }
     }
 }
