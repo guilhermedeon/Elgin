@@ -13,11 +13,33 @@ public static class Program
 {
     static void Main(string[] args)
     {
+
+        // mock
+        /*
+         var auxArgs = args.ToList();
+
+        auxArgs.Add("C:\\Users\\guiby\\OneDrive\\Desktop\\XMLS\\Impressao teste\\prog.txt");
+
+        args = auxArgs.ToArray();
+        */
+        
+
+
         ElginPrinter printer = ElginPrinterFactory.CreateUsbPrinter(ElginModel.i9);
         ElginPrinterService service = new ElginPrinterService();
         ElginPrinterConnectionManager manager = new ElginPrinterConnectionManager();
-        MainFlow(args, printer, service, manager);
-        TestFlow(args, printer, service, manager);
+        try
+        {
+            MainFlow(args, printer, service, manager);
+            //MainFlowFancy(args, printer, service, manager);
+        }
+        catch(Exception ex)
+        {
+            Console.WriteLine(ex);
+            Console.WriteLine("Pressione qualquer tecla para sair");
+            Console.ReadLine();
+        }
+        //TestFlow(args, printer, service, manager);
     }
 
     private static void MainFlow(string[] args, ElginPrinter printer, ElginPrinterService service, ElginPrinterConnectionManager manager)
@@ -66,9 +88,8 @@ public static class Program
                 linhas.Add(string.Empty);
                 linhas.Add("----------------------------------------------");
 
-                service.ImprimeTexto(linhas, connection);
+                service.ImprimeTextoWithCuts(linhas, connection);
 
-                service.Corte(5, connection);
 
                 continue;
             }
@@ -76,6 +97,63 @@ public static class Program
             Console.WriteLine($"Arquivo não suportado: {arg}");
         }
     }
+
+    private static void MainFlowFancy(string[] args, ElginPrinter printer, ElginPrinterService service, ElginPrinterConnectionManager manager)
+    {
+        printer.Validate();
+
+        List<Delegate> delegates = new List<Delegate>();
+
+        using var connection = manager.CreateConnection(printer);
+
+        if (connection == null)
+            throw new ArgumentException("Connection is null");
+
+        foreach (var argRaw in args)
+        {
+            string arg = argRaw.Replace("\\", "/");
+            Console.WriteLine($"Imprimindo arquivo: {arg}");
+            if (arg.EndsWith(".jpg") || arg.EndsWith(".png"))
+            {
+                delegates.Add(() => service.ImprimeImagem(argRaw, connection));
+                continue;
+            }
+
+            if (arg.EndsWith(".pdf"))
+            {
+                int count = ConvertPdfToPng(arg);
+                for (int i = 1; i <= count; i++)
+                {
+                    delegates.Add(() => service.ImprimeImagemWithDelete(arg.Replace(".pdf", $"{i.ToString()}.png"), connection));
+                }
+                continue;
+            }
+
+            if (arg.EndsWith(".xml"))
+            {
+                delegates.Add(() => service.ImprimeXMLSAT(arg, connection));
+                continue;
+            }
+
+            if (arg.EndsWith(".txt"))
+            {
+                var linhas = File.ReadAllLines(arg).ToList();
+
+                linhas.Insert(0, arg);
+                linhas.Insert(1, "----------------------------------------------");
+                linhas.Insert(2, string.Empty);
+                linhas.Add(string.Empty);
+                linhas.Add("----------------------------------------------");
+
+                delegates.Add(() => service.ImprimeTexto(linhas, connection));
+                continue;
+            }
+            Console.WriteLine($"Arquivo não suportado: {arg}");
+        }
+
+        service.GenericWithCuts(delegates, connection);
+    }
+
 
     private static void TestFlow(string[] args, ElginPrinter printer, ElginPrinterService service, ElginPrinterConnectionManager manager)
     {

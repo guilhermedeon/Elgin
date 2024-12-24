@@ -16,7 +16,11 @@ namespace Elgin.Entities.Printer
         public ElginPrinterConnection(ElginPrinter printer)
         {
             printer.Validate();
-            ElginDriver.AbreConexaoImpressora(printer);
+            int result = ElginDriver.AbreConexaoImpressora(printer);
+            if (result != 0)
+            {
+                throw new InvalidOperationException(ElginResultCodeDescriptor.GetEnumFromInt(result));
+            }
             IsOpen = true;
         }
 

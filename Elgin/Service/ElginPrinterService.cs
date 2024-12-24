@@ -1,4 +1,5 @@
 ﻿using Elgin.Driver;
+using Elgin.Entities;
 using Elgin.Entities.Printer;
 using System;
 using System.Collections.Generic;
@@ -37,6 +38,17 @@ namespace Elgin.Service
                 throw new InvalidOperationException("Connection is not open");
             }
             return ElginDriver.ImprimeImagem(path);
+        }
+
+        public int ImprimeImagemWithDelete(string path, ElginPrinterConnection connection)
+        {
+            if (!connection.IsOpen)
+            {
+                throw new InvalidOperationException("Connection is not open");
+            }
+            int result = ElginDriver.ImprimeImagem(path);
+            File.Delete(path);
+            return result;
         }
 
         public int ImprimeImagemWithCuts(string path, ElginPrinterConnection connection)
@@ -79,6 +91,20 @@ namespace Elgin.Service
             }
         }
 
+        public void ImprimeTextoWithCuts(List<string> linhas, ElginPrinterConnection connection)
+        {
+            if (!connection.IsOpen)
+            {
+                throw new InvalidOperationException("Connection is not open");
+            }
+            foreach (var linha in linhas)
+            {
+                ElginDriver.ImpressaoTexto(linha, 1, 0, 0);
+                ElginDriver.AvancaPapel(1);
+            }
+            Corte(5, connection);
+        }
+
         public void Generic(Delegate @delegate, ElginPrinterConnection connection)
         {
             if (!connection.IsOpen)
@@ -86,6 +112,30 @@ namespace Elgin.Service
                 throw new InvalidOperationException("Connection is not open");
             }
             @delegate.DynamicInvoke();
+        }
+
+        public void GenericWithCuts(Delegate @delegate, ElginPrinterConnection connection)
+        {
+            if (!connection.IsOpen)
+            {
+                throw new InvalidOperationException("Connection is not open");
+            }
+            @delegate.DynamicInvoke();
+            Corte(5, connection);
+        }
+
+        public void GenericWithCuts(List<Delegate> delegates, ElginPrinterConnection connection)
+        {
+            if (!connection.IsOpen)
+            {
+                throw new InvalidOperationException("Connection is not open");
+            }
+            foreach (var @delegate in delegates)
+            {
+                int result = (int)@delegate.DynamicInvoke();
+                Console.WriteLine(ElginResultCodeDescriptor.GetEnumFromInt(result));
+                Corte(5, connection);
+            }
         }
     }
 }
