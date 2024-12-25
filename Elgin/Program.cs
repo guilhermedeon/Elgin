@@ -27,7 +27,7 @@ public static class Program
 
         ElginPrinter printer = ElginPrinterFactory.CreateUsbPrinter(ElginModel.i9);
         ElginPrinterService service = new ElginPrinterService();
-        ElginPrinterConnectionManager manager = new ElginPrinterConnectionManager();
+        ElginPrinterConnectionManager manager = ElginPrinterConnectionManager.GetInstance();
         try
         {
             MainFlow(args, printer, service, manager);

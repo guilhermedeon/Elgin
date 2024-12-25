@@ -7,9 +7,30 @@ using System.Threading.Tasks;
 
 namespace Elgin.Service
 {
-    public class ElginPrinterConnectionManager : IDisposable
+    public class ElginPrinterConnectionManager
     {
+        public static ElginPrinterConnectionManager instance;
+
+        public static ElginPrinterConnectionManager GetInstance()
+        {
+            if (instance == null)
+            {
+                instance = new ElginPrinterConnectionManager();
+            }
+            return instance;
+        }
+
         private ElginPrinterConnection? currentConnection;
+
+        private ElginPrinterConnectionManager()
+        {
+            
+        }
+
+        ~ElginPrinterConnectionManager()
+        {
+            CloseConnection();
+        }
 
         public ElginPrinterConnection? GetCurrentConnection()
         {
@@ -34,11 +55,6 @@ namespace Elgin.Service
                 currentConnection.Dispose();
                 currentConnection = null;
             }
-        }
-
-        public void Dispose()
-        {
-            CloseConnection();
         }
     }
 }
